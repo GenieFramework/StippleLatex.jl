@@ -2,11 +2,10 @@ module StippleLatex
 
 import Genie
 import Stipple
-import Genie.Renderer.Html: HTMLString, normal_element
 
 using Stipple.Reexport
 
-export latex
+export latex, @latex, @latex!!
 
 const DEFAULT_WRAPPER = Genie.Renderer.Html.template
 const COMPONENTS = ["'vue-katex'" => :vueKatex]
@@ -62,14 +61,47 @@ end
 
 #===#
 
-Genie.Renderer.Html.register_normal_element("katex__element", context = @__MODULE__)
-
-function latex( fieldname::Union{Symbol,Nothing} = nothing,
+function latex(content::String = "",
                 args...;
-                wrap::Function = StippleUI.DEFAULT_WRAPPER,
-                kwargs...) where {T<:Stipple.ReactiveModel}
+                wrap::Function = DEFAULT_WRAPPER,
+                expression::String = "",
+                auto::Bool = true,
+                display::Bool = false,
+                throw_on_error::Bool = false,
+                error_color::String = "#CC0000",
+                max_size::String="Infinity",
+                max_expand::Union{String,Number} = 1000,
+                allowed_protocols::Vector{String} = String[],
+                strict::Union{Bool,String} = "warn",
+                kwargs...)
+  isempty(expression) || (content = expression)
+  options = Dict(:displayMode => display,
+                  :throwOnError => throw_on_error,
+                  :errorColor => error_color,
+                  :maxSize => max_size,
+                  :maxExpand => max_expand,
+                  :allowedProtocols => allowed_protocols,
+                  :strict => strict)
+  arguments = "{ expression: '$(content)', options: $(Genie.Renderer.Json.JSONParser.json(options)) }"
+  arguments = replace(arguments, '"'=>"'")
+
   wrap() do
-    katex__element(args...; kwargs...)
+    auto ?
+      Genie.Renderer.Html.div(v__katex!!auto = arguments, args...; kwargs...) :
+      Genie.Renderer.Html.div(v__katex = arguments, args...; kwargs...)
+  end
+end
+
+
+macro latex(expr)
+  quote
+    "v-katex:auto='$($(esc(expr)))'"
+  end
+end
+
+macro latex!!(expr)
+  quote
+    "v-katex:display='$($(esc(expr)))'"
   end
 end
 
