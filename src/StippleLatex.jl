@@ -82,7 +82,7 @@ function latex(content::String = "",
                   :maxExpand => max_expand,
                   :allowedProtocols => allowed_protocols,
                   :strict => strict)
-  arguments = "{ expression: '$(content)', options: $(Genie.Renderer.Json.JSONParser.json(options)) }"
+  arguments = "{ expression: '$(content)', options: $(Stipple.JSONParser.json(options)) }"
   arguments = replace(arguments, '"'=>"'")
 
   wrap() do
