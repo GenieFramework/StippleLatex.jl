@@ -1,1 +1,1 @@
-# StippleKatex
+# StippleLatex
