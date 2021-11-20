@@ -56,7 +56,7 @@ end
 #===#
 
 function __init__()
-  push!(Stipple.DEPS, deps)
+  Stipple.DEPS[@__MODULE__] = deps
 end
 
 #===#
