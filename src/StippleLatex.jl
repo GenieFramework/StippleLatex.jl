@@ -7,7 +7,6 @@ using Stipple.Reexport
 
 export latex, @latex, @latex!!
 
-const DEFAULT_WRAPPER = Genie.Renderer.Html.template
 const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
 #===#
@@ -63,7 +62,6 @@ end
 
 function latex(content::String = "",
                 args...;
-                wrap::Function = DEFAULT_WRAPPER,
                 expression::String = "",
                 auto::Bool = true,
                 display::Bool = false,
@@ -85,11 +83,9 @@ function latex(content::String = "",
   arguments = "{ expression: '$(content)', options: $(Stipple.JSONParser.json(options)) }"
   arguments = replace(arguments, '"'=>"'")
 
-  wrap() do
-    auto ?
-      Genie.Renderer.Html.div(v__katex!!auto = arguments, args...; kwargs...) :
-      Genie.Renderer.Html.div(v__katex = arguments, args...; kwargs...)
-  end
+  auto ?
+    Genie.Renderer.Html.div(v__katex!!auto = arguments, args...; kwargs...) :
+    Genie.Renderer.Html.div(v__katex = arguments, args...; kwargs...)
 end
 
 
