@@ -11,7 +11,7 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
 #===#
 
-function deps() :: String
+function deps() :: Vector{String}
   Genie.Router.route("/js/stipplekatex/katex.min.css") do
     Genie.Renderer.WebRenderable(
       read(joinpath(@__DIR__, "..", "files", "katex.min.css"), String),
@@ -44,18 +44,18 @@ function deps() :: String
       :fontwoff2) |> Genie.Renderer.respond
   end
 
-  string(
+  [
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/katex.min.js"),
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/auto-render.min.js", onload="renderMathInElement(document.body);"),
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/vue-katex.min.js", defer=true),
     Genie.Renderer.Html.link(href="$(Genie.config.base_path)js/stipplekatex/katex.min.css", rel="stylesheet"),
-  )
+  ]
 end
 
 #===#
 
 function __init__()
-  Stipple.DEPS[@__MODULE__] = deps
+  Stipple.deps!(@__MODULE__, deps)
 end
 
 #===#
