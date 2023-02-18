@@ -5,7 +5,7 @@ import Stipple
 
 using Stipple.Reexport
 
-export latex, @latex_str
+export latex, @latex, @latex_str
 
 const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
@@ -73,13 +73,14 @@ function latex(content::Union{String, Symbol} = "",
                 strict::Union{Bool,String} = "warn",
                 kwargs...)
   isempty(expression) || (content = expression)
-  options = Dict(:displayMode => display,
-                  :throwOnError => throw_on_error,
-                  :errorColor => error_color,
-                  :maxSize => max_size,
-                  :maxExpand => max_expand,
-                  :allowedProtocols => allowed_protocols,
-                  :strict => strict)
+  options = Dict(:displayMode => dictvalue(display),
+    :throwOnError => dictvalue(throw_on_error),
+    :errorColor => dictvalue(error_color),
+    :maxSize => dictvalue(max_size),
+    :maxExpand => dictvalue(max_expand),
+    :allowedProtocols => dictvalue(allowed_protocols),
+    :strict => dictvalue(strict)
+  )
   attr = if content isa Symbol
     String(content)
   else
@@ -99,6 +100,46 @@ end
 macro latex_str(expr, mode)
   expr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
   Expr(:kw, Symbol("v-katex", ":", mode), expr)
+end
+
+function dictvalue(@nospecialize(x))
+  x isa Symbol ? Stipple.JSONText("($x)") : x
+end
+
+function latex_expr(content::Union{String, Symbol} = "",
+                    args...;
+                    expression::String = "",
+                    auto::Bool = true,
+                    display::Union{Symbol, Bool} = false,
+                    throw_on_error::Bool = false,
+                    error_color::String = "#CC0000",
+                    max_size::String="Infinity",
+                    max_expand::Union{String,Number} = 1000,
+                    allowed_protocols::Vector{String} = String[],
+                    strict::Union{Bool,String} = "warn",
+                    kwargs...)
+isempty(expression) || (content = expression)
+options = Dict(:displayMode => dictvalue(display),
+  :throwOnError => dictvalue(throw_on_error),
+  :errorColor => dictvalue(error_color),
+  :maxSize => dictvalue(max_size),
+  :maxExpand => dictvalue(max_expand),
+  :allowedProtocols => dictvalue(allowed_protocols),
+  :strict => dictvalue(strict)
+)
+attr = if content isa Symbol
+  String(content)
+else
+  Stipple.JSONText("'$(Stipple.JSONParser.write(Dict(:expression => content, :options => options)))'")
+end
+  auto ? Expr(:kw, Symbol("v-katex:auto"), attr) : Expr(:kw, Symbol("v-katex"), attr)
+end
+
+macro latex(args...)
+  for (i, a) in enumerate(args)
+    a isa Expr && a.head == :(=) && (args[i].head = :kw)
+  end
+  @eval __module__ StippleLatex.latex_expr($(args...))
 end
 
 end
