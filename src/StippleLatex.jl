@@ -5,7 +5,7 @@ import Stipple
 
 using Stipple.Reexport
 
-export latex, @latex, @latex!!
+export latex, @latex_str
 
 const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
@@ -60,7 +60,7 @@ end
 
 #===#
 
-function latex(content::String = "",
+function latex(content::Union{String, Symbol} = "",
                 args...;
                 expression::String = "",
                 auto::Bool = true,
@@ -80,25 +80,25 @@ function latex(content::String = "",
                   :maxExpand => max_expand,
                   :allowedProtocols => allowed_protocols,
                   :strict => strict)
-  arguments = "{ expression: '$(content)', options: $(Stipple.JSONParser.json(options)) }"
-  arguments = replace(arguments, '"'=>"'")
+  attr = if content isa Symbol
+    String(content)
+  else
+    Stipple.JSONText("'$(Stipple.JSONParser.write(Dict(:expression => content, :options => options)))'")
+  end
 
   auto ?
-    Genie.Renderer.Html.div(v__katex!!auto = arguments, args...; kwargs...) :
-    Genie.Renderer.Html.div(v__katex = arguments, args...; kwargs...)
+    Genie.Renderer.Html.span(var"v-katex:auto" = attr, args...; kwargs...) :
+    Genie.Renderer.Html.span(var"v-katex" = attr, args...; kwargs...)
 end
 
-
-macro latex(expr)
-  quote
-    "v-katex:auto='$($(esc(expr)))'"
-  end
+macro latex_str(expr)
+  expr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
+  Expr(:kw, Symbol("v-katex"), expr)
 end
 
-macro latex!!(expr)
-  quote
-    "v-katex:display='$($(esc(expr)))'"
-  end
+macro latex_str(expr, mode)
+  expr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
+  Expr(:kw, Symbol("v-katex", ":", mode), expr)
 end
 
 end
