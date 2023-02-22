@@ -118,7 +118,7 @@ end
 function latex_expr(content::Union{String, Symbol} = "",
                     args...;
                     expression::String = "",
-                    auto::Bool = true,
+                    auto::Bool = false,
                     display::Union{Symbol, Bool} = false,
                     throw_on_error::Bool = false,
                     error_color::String = "#CC0000",
