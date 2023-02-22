@@ -71,7 +71,7 @@ function ui()
 
 
             row([
-                cell(class = "q-pa-md bg-red-1", raw"""cell(class = "q-pa-md", @latex(raw"\tanh^2 y", display = R"x >= 5"))""")
+                cell(class = "q-pa-md bg-red-1", raw"""@latex(raw"This is auto mode with an inline formula \(\cos^2x\) and a display formula $$\sin^2x$$""")
                 cell(class = "q-pa-md bg-green-1", @latex(raw"This is auto mode with an inline formula \(\cos^2x\) and a display formula $$\sin^2x$$", auto = true))
             ])
         ]))
