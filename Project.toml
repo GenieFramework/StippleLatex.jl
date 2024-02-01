@@ -1,7 +1,7 @@
 name = "StippleLatex"
 uuid = "8706c442-30ce-4f68-b407-b81ebf148be9"
 authors = ["Adrian Salceanu <e@essenciary.com>", "Helmut Hännsel <helmut.haensel@gmx.de>"]
-version = "0.5.3"
+version = "0.5.4"
 
 [deps]
 Genie = "c43c736e-a2d1-11e8-161f-af95117fbd1e"
@@ -9,7 +9,7 @@ Stipple = "4acbeb90-81a0-11ea-1966-bdaff8155998"
 
 [compat]
 Genie = "5"
-Stipple = "0.25, 0.26, 0.27"
+Stipple = "0.25, 0.26, 0.27, 0.28"
 julia = "1.6"
 
 [extras]
