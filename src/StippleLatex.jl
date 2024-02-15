@@ -149,7 +149,7 @@ options = Dict(:displayMode => dictvalue(display),
       :(([$content], "v-katex:auto = $($(katexdict.s))")...) |> esc
     end
   else
-    Expr(:kw, Symbol("v-katex"), katexdict)
+    Expr(:kw, Symbol("v-katex"), d)
   end
 end
 
