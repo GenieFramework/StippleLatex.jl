@@ -12,7 +12,23 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 #===#
 
 function deps() :: Vector{String}
-  Genie.Router.route("/js/stipplekatex/katex.min.css") do
+  [
+    Genie.Renderer.Html.script("vueLegacy.context = 'Latex'"),
+    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
+    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
+    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
+    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/vue-katex.umd.js", defer=true),
+    Genie.Renderer.Html.link(href="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.css", rel="stylesheet"),
+  ]
+end
+
+#===#
+
+function __init__()
+  Stipple.deps!(@__MODULE__, deps)
+  Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
+
+  Genie.Router.route("/stipplelatex/assets/katex/katex.min.css") do
     Genie.Renderer.WebRenderable(
       read(joinpath(@__DIR__, "..", "files", "katex.min.css"), String),
       :css) |> Genie.Renderer.respond
@@ -20,7 +36,7 @@ function deps() :: Vector{String}
     
   filenames = ["katex.min.js", "auto-render.min.js", "vue-katex.umd.js", "deepmerge.umd.js"]
   for filename in filenames
-    Genie.Router.route("/js/stipplekatex/$filename") do
+    Genie.Router.route("/stipplelatex/assets/katex/$filename") do
       Genie.Renderer.WebRenderable(
         read(joinpath(@__DIR__, "..", "files", filename), String),
         :javascript) |> Genie.Renderer.respond
@@ -37,28 +53,12 @@ function deps() :: Vector{String}
     "KaTeX_Size4-Regular.woff2", "KaTeX_Typewriter-Regular.woff2"
   ]
   for filename in filenames
-    Genie.Router.route("/js/stipplekatex/fonts/$filename") do
+    Genie.Router.route("/stipplelatex/assets/katex/fonts/$filename") do
       Genie.Renderer.WebRenderable(
         read(joinpath(@__DIR__, "..", "files", "fonts", filename), String),
         :fontwoff2) |> Genie.Renderer.respond
     end
   end
-
-  [
-    Genie.Renderer.Html.script("vueLegacyContext = 'Latex'"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/deepmerge.umd.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/katex.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/auto-render.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/vue-katex.umd.js", defer=true),
-    Genie.Renderer.Html.link(href="$(Genie.config.base_path)js/stipplekatex/katex.min.css", rel="stylesheet"),
-  ]
-end
-
-#===#
-
-function __init__()
-  Stipple.deps!(@__MODULE__, deps)
-  Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
 end
 
 #===#
