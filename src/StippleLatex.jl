@@ -45,6 +45,7 @@ function deps() :: Vector{String}
   end
 
   [
+    Genie.Renderer.Html.script("vueLegacyContext = 'Latex'"),
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/deepmerge.umd.js"),
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/katex.min.js"),
     Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/auto-render.min.js"),
@@ -57,6 +58,7 @@ end
 
 function __init__()
   Stipple.deps!(@__MODULE__, deps)
+  Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
 end
 
 #===#
