@@ -1,9 +1,10 @@
 module StippleLatex
 
-import Genie
-import Stipple
+using Genie
+using Stipple
 
-using Stipple.Reexport
+# using Stipple.Reexport
+import Genie: Assets.package_version, Renderer.WebRenderable
 
 export latex, @latex, @latex_str
 
@@ -13,12 +14,12 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
 function deps() :: Vector{String}
   [
-    Genie.Renderer.Html.script("vueLegacy.context = 'Latex'"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)stipplelatex/assets/katex/vue-katex.umd.js", defer=true),
-    Genie.Renderer.Html.link(href="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.css", rel="stylesheet"),
+    script("vueLegacy.context = 'Latex'"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/vue-katex.umd.js", defer=true),
+    link(href="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.css", rel="stylesheet"),
   ]
 end
 
@@ -28,18 +29,18 @@ function __init__()
   Stipple.deps!(@__MODULE__, deps)
   Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
 
-  Genie.Router.route("/stipplelatex/assets/katex/katex.min.css") do
-    Genie.Renderer.WebRenderable(
+  route("/stipplelatex/assets/katex/katex.min.css") do
+    WebRenderable(
       read(joinpath(@__DIR__, "..", "files", "katex.min.css"), String),
-      :css) |> Genie.Renderer.respond
+      :css) |> respond
     end
     
   filenames = ["katex.min.js", "auto-render.min.js", "vue-katex.umd.js", "deepmerge.umd.js"]
   for filename in filenames
     Genie.Router.route("/stipplelatex/assets/katex/$filename") do
-      Genie.Renderer.WebRenderable(
+      WebRenderable(
         read(joinpath(@__DIR__, "..", "files", filename), String),
-        :javascript) |> Genie.Renderer.respond
+        :javascript) |> respond
     end
   end
 
@@ -54,9 +55,9 @@ function __init__()
   ]
   for filename in filenames
     Genie.Router.route("/stipplelatex/assets/katex/fonts/$filename") do
-      Genie.Renderer.WebRenderable(
+      WebRenderable(
         read(joinpath(@__DIR__, "..", "files", "fonts", filename), String),
-        :fontwoff2) |> Genie.Renderer.respond
+        :fontwoff2) |> respond
     end
   end
 end
