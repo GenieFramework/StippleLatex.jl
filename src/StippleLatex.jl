@@ -1,9 +1,10 @@
 module StippleLatex
 
-import Genie
-import Stipple
+using Genie
+using Stipple
 
-using Stipple.Reexport
+# using Stipple.Reexport
+import Genie: Assets.package_version, Renderer.WebRenderable
 
 export latex, @latex, @latex_str
 
@@ -12,18 +13,34 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 #===#
 
 function deps() :: Vector{String}
-  Genie.Router.route("/js/stipplekatex/katex.min.css") do
-    Genie.Renderer.WebRenderable(
+  [
+    (isdefined(Stipple, :add_plugins) ? [script("{vueLegacy.context = 'Latex'}")] : String[])...,
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
+    script(src="$(Genie.config.base_path)stipplelatex/assets/katex/vue-katex.umd.js", defer=true),
+    link(href="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.css", rel="stylesheet"),
+  ]
+end
+
+#===#
+
+function __init__()
+  Stipple.deps!(@__MODULE__, deps)
+  isdefined(Stipple, :add_plugins) && Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
+
+  route("/stipplelatex/assets/katex/katex.min.css") do
+    WebRenderable(
       read(joinpath(@__DIR__, "..", "files", "katex.min.css"), String),
-      :css) |> Genie.Renderer.respond
+      :css) |> respond
     end
     
   filenames = ["katex.min.js", "auto-render.min.js", "vue-katex.umd.js", "deepmerge.umd.js"]
   for filename in filenames
-    Genie.Router.route("/js/stipplekatex/$filename") do
-      Genie.Renderer.WebRenderable(
+    Genie.Router.route("/stipplelatex/assets/katex/$filename") do
+      WebRenderable(
         read(joinpath(@__DIR__, "..", "files", filename), String),
-        :javascript) |> Genie.Renderer.respond
+        :javascript) |> respond
     end
   end
 
@@ -37,26 +54,12 @@ function deps() :: Vector{String}
     "KaTeX_Size4-Regular.woff2", "KaTeX_Typewriter-Regular.woff2"
   ]
   for filename in filenames
-    Genie.Router.route("/js/stipplekatex/fonts/$filename") do
-      Genie.Renderer.WebRenderable(
+    Genie.Router.route("/stipplelatex/assets/katex/fonts/$filename") do
+      WebRenderable(
         read(joinpath(@__DIR__, "..", "files", "fonts", filename), String),
-        :fontwoff2) |> Genie.Renderer.respond
+        :fontwoff2) |> respond
     end
   end
-
-  [
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/deepmerge.umd.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/katex.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/auto-render.min.js"),
-    Genie.Renderer.Html.script(src="$(Genie.config.base_path)js/stipplekatex/vue-katex.umd.js", defer=true),
-    Genie.Renderer.Html.link(href="$(Genie.config.base_path)js/stipplekatex/katex.min.css", rel="stylesheet"),
-  ]
-end
-
-#===#
-
-function __init__()
-  Stipple.deps!(@__MODULE__, deps)
 end
 
 #===#
@@ -84,30 +87,37 @@ function latex(content::Union{String, Symbol} = "",
   )
   output = content isa Symbol ? Stipple.JSONText(String(content)) : String(content)
   d = auto ? Dict(:options => options) : Dict(:expression => output, :options => options)
-  katexdict = Stipple.JSONText("'$(Stipple.JSONParser.write(d))'")
+  katexdict = String(js_attr(d))
 
   if auto
     if content isa Symbol
-      Genie.Renderer.Html.span(var"v-katex:auto" = katexdict, "{{ $content }}", args...; kwargs...)
+      span(var"v-katex:auto" = katexdict, "{{ $content }}", args...; kwargs...)
     else
-      Genie.Renderer.Html.span(content, var"v-katex:auto" = katexdict, args...; kwargs...)
+      span(content, var"v-katex:auto" = katexdict, args...; kwargs...)
     end
   else
-    Genie.Renderer.Html.span(var"v-katex" = katexdict, args...; kwargs...)
+    span(var"v-katex" = katexdict, args...; kwargs...)
   end
 end
 
 macro latex_str(expr)
-  expr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
+  js_mode = startswith(expr, ':')
+  js_mode && (expr = expr[2:end])
+  # a doble colon at the beginning escapes js expression mode for strings beginning with a colon
+  js_mode = js_mode && !startswith(expr, ':')
+  expr = js_mode ? expr : String(js_attr(expr))
   Expr(:kw, Symbol("v-katex"), expr)
 end
 
 macro latex_str(expr, mode)
+  js_mode = startswith(expr, ':')
+  js_mode && (expr = expr[2:end])
+  # a doble colon at the beginning escapes js expression mode for strings beginning with a colon
+  js_mode = js_mode && !startswith(expr, ':')
   if mode == "auto"
-    startswith(expr, ':') ? :((["{{ $($(expr[2:end])) }}"], "v-katex:$($mode)")...) : :(([$expr], "v-katex:$($mode)")...)
+    js_mode ? :((["{{ $($expr) }}"], "v-katex:$($mode)")...) : :(([$expr], "v-katex:$($mode)")...)
   else
-    newexpr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
-    Expr(:kw, Symbol("v-katex", ":", mode), newexpr)
+    Expr(:kw, Symbol("v-katex", ":", mode), js_mode ? expr : String(js_attr(expr)))
   end
 end
 
@@ -138,13 +148,13 @@ options = Dict(:displayMode => dictvalue(display),
 )
   output = content isa Symbol ? Stipple.JSONText(String(content)) : String(content)
   d = auto ? Dict(:options => options) : Dict(:expression => output, :options => options)
-  katexdict = Stipple.JSONText("'$(Stipple.JSONParser.write(d))'")
+  katexdict = String(js_attr(d))
 
   if auto
     if content isa Symbol
-      :((["{{ $($content) }}"], "v-katex:auto = $($(katexdict.s))")...) |> esc
+      :((["{{ $($content) }}"], "v-katex:auto = $($(katexdict))")...) |> esc
     else
-      :(([$content], "v-katex:auto = $($(katexdict.s))")...) |> esc
+      :(([$content], "v-katex:auto = $($katexdict)")...) |> esc
     end
   else
     Expr(:kw, Symbol("v-katex"), katexdict)
