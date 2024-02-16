@@ -87,30 +87,31 @@ function latex(content::Union{String, Symbol} = "",
   )
   output = content isa Symbol ? Stipple.JSONText(String(content)) : String(content)
   d = auto ? Dict(:options => options) : Dict(:expression => output, :options => options)
-  katexdict = Stipple.JSONText("'$(Stipple.JSONParser.write(d))'")
+  katexdict = String(js_attr(d))
 
   if auto
     if content isa Symbol
-      Genie.Renderer.Html.span(var"v-katex:auto" = katexdict, "{{ $content }}", args...; kwargs...)
+      span(var"v-katex:auto" = katexdict, "{{ $content }}", args...; kwargs...)
     else
-      Genie.Renderer.Html.span(content, var"v-katex:auto" = katexdict, args...; kwargs...)
+      span(content, var"v-katex:auto" = katexdict, args...; kwargs...)
     end
   else
-    Genie.Renderer.Html.span(var"v-katex" = katexdict, args...; kwargs...)
+    span(var"v-katex" = katexdict, args...; kwargs...)
   end
 end
 
 macro latex_str(expr)
-  expr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
+  expr = startswith(expr, ':') ? expr[2:end] : String(js_attr(expr))
   Expr(:kw, Symbol("v-katex"), expr)
 end
 
 macro latex_str(expr, mode)
+  js_mode = startswith(expr, ':')
+  js_mode && (expr = expr[2:end])
   if mode == "auto"
-    startswith(expr, ':') ? :((["{{ $($(expr[2:end])) }}"], "v-katex:$($mode)")...) : :(([$expr], "v-katex:$($mode)")...)
+    js_mode ? :((["{{ $($expr) }}"], "v-katex:$($mode)")...) : :(([$expr], "v-katex:$($mode)")...)
   else
-    newexpr = startswith(expr, ':') ? :($expr[2:end]) : :("'" * Stipple.JSONParser.write($expr)[2:end-1] * "'")
-    Expr(:kw, Symbol("v-katex", ":", mode), newexpr)
+    Expr(:kw, Symbol("v-katex", ":", mode), js_mode ? expr : String(js_attr(expr)))
   end
 end
 
@@ -141,16 +142,16 @@ options = Dict(:displayMode => dictvalue(display),
 )
   output = content isa Symbol ? Stipple.JSONText(String(content)) : String(content)
   d = auto ? Dict(:options => options) : Dict(:expression => output, :options => options)
-  katexdict = Stipple.JSONText("'$(Stipple.JSONParser.write(d))'")
+  katexdict = String(js_attr(d))
 
   if auto
     if content isa Symbol
-      :((["{{ $($content) }}"], "v-katex:auto = $($(katexdict.s))")...) |> esc
+      :((["{{ $($content) }}"], "v-katex:auto = $($(katexdict))")...) |> esc
     else
-      :(([$content], "v-katex:auto = $($(katexdict.s))")...) |> esc
+      :(([$content], "v-katex:auto = $($katexdict)")...) |> esc
     end
   else
-    Expr(:kw, Symbol("v-katex"), d)
+    Expr(:kw, Symbol("v-katex"), katexdict)
   end
 end
 
