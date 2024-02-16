@@ -14,7 +14,7 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
 function deps() :: Vector{String}
   [
-    isdefined(Stipple, :add_plugins) && script("{vueLegacy.context = 'Latex'}"),
+    (isdefined(Stipple, :add_plugins) ? [script("{vueLegacy.context = 'Latex'}")] : String[])...,
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
@@ -101,13 +101,19 @@ function latex(content::Union{String, Symbol} = "",
 end
 
 macro latex_str(expr)
-  expr = startswith(expr, ':') ? expr[2:end] : String(js_attr(expr))
+  js_mode = startswith(expr, ':')
+  js_mode && (expr = expr[2:end])
+  # a doble colon at the beginning escapes js expression mode for strings beginning with a colon
+  js_mode = js_mode && !startswith(expr, ':')
+  expr = js_mode ? expr : String(js_attr(expr))
   Expr(:kw, Symbol("v-katex"), expr)
 end
 
 macro latex_str(expr, mode)
   js_mode = startswith(expr, ':')
   js_mode && (expr = expr[2:end])
+  # a doble colon at the beginning escapes js expression mode for strings beginning with a colon
+  js_mode = js_mode && !startswith(expr, ':')
   if mode == "auto"
     js_mode ? :((["{{ $($expr) }}"], "v-katex:$($mode)")...) : :(([$expr], "v-katex:$($mode)")...)
   else
