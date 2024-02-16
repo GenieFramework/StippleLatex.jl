@@ -14,7 +14,7 @@ const COMPONENTS = ["'vue-katex'" => :vueKatex]
 
 function deps() :: Vector{String}
   [
-    script("vueLegacy.context = 'Latex'"),
+    isdefined(Stipple, :add_plugins) && script("{vueLegacy.context = 'Latex'}"),
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/deepmerge.umd.js"),
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/katex.min.js"),
     script(src="$(Genie.config.base_path)stipplelatex/assets/katex/auto-render.min.js"),
@@ -27,7 +27,7 @@ end
 
 function __init__()
   Stipple.deps!(@__MODULE__, deps)
-  Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
+  isdefined(Stipple, :add_plugins) && Stipple.add_plugins(StippleLatex, "Latex"; legacy = true)
 
   route("/stipplelatex/assets/katex/katex.min.css") do
     WebRenderable(
