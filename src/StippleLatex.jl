@@ -1,10 +1,10 @@
 module StippleLatex
 
-using Genie
 using Stipple
+using Stipple.Genie
 
 # using Stipple.Reexport
-import Genie: Assets.package_version, Renderer.WebRenderable
+import Stipple.Genie: Assets.package_version, Renderer.WebRenderable
 
 export latex, @latex, @latex_str
 
